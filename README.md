@@ -14,6 +14,7 @@ Uma aplicação web de elevado desempenho desenvolvida para analisar *modpacks* 
 - **📊 Painel Interativo (Dashboard):** Visualização clara com *badges* de estado, filtros dinâmicos e rastreamento de dependências.
 - **📦 Exportação de Modpacks:** Descarrega um `.mrpack`/`manifest.json` atualizado com URLs de download e hashes reais para os mods do Modrinth.
 - **🤖 CLI de Atualização Automática:** Script (`npm run update-mods`) que aponta diretamente para a pasta `mods/` de uma instância real e atualiza os `.jar` identificados no Modrinth, com backup automático dos ficheiros substituídos.
+- **🔀 Portagem entre Plataformas:** Converte um pack analisado para o formato da outra plataforma (CurseForge ↔ Modrinth), com uma etapa de revisão obrigatória — ver secção dedicada abaixo.
 
 ---
 
@@ -86,13 +87,26 @@ Este script não depende do Next.js nem requer `npm install` para além do Node 
 
 ---
 
+## 🔀 Portagem entre CurseForge e Modrinth
+
+Depois de analisar um pack, o painel mostra um botão "Portar para CurseForge" ou "Portar para Modrinth" (o oposto do formato carregado). Isto tenta converter o pack para a outra plataforma.
+
+**Limitação importante:** não existe uma API oficial que mapeie o ID de um mod no Modrinth para o seu equivalente no CurseForge (ou vice-versa). A correspondência é feita por pesquisa de nome na plataforma de destino, o que é uma heurística — não uma garantia. Por isso:
+
+- Cada mod mostra a(s) correspondência(s) encontrada(s) com um nível de confiança (alta/média/baixa).
+- **Nada é exportado automaticamente.** Tem de rever e confirmar (ou excluir) cada mod antes de gerar o ficheiro final.
+- Mods sem correspondência de alta confiança começam por defeito como "Não incluir", para nunca acabar com o mod errado no pack.
+- Portar para CurseForge requer `CURSEFORGE_API_KEY` configurada no servidor (ver secção de instalação); sem ela, a opção fica indisponível com um aviso claro.
+
+---
+
 ## 📂 Estrutura do Projeto
 
 ```text
 minecraft-mod-inspector/
 ├── src/
 │   ├── app/                # Rotas do Next.js App Router e API handlers
-│   │   ├── api/            # Endpoints (/api/analyze-pack, /api/analyze-log)
+│   │   ├── api/            # Endpoints (/api/analyze-pack, /api/analyze-log, /api/port-modpack)
 │   │   ├── globals.css     # Estilos globais do Tailwind CSS
 │   │   └── page.tsx        # Página principal com os componentes
 │   ├── components/         # Componentes React da interface
@@ -102,6 +116,7 @@ minecraft-mod-inspector/
 │   │   ├── crashLogParser.ts  # Parser Regex para logs de erro
 │   │   ├── dependencyResolver.ts # Algoritmo BFS para dependências
 │   │   ├── modConflicts.ts       # Lista selecionada de conflitos conhecidos entre mods
+│   │   ├── portMatcher.ts        # Correspondência heurística CurseForge <-> Modrinth
 │   │   ├── modpackExporter.ts    # Gerador do manifesto atualizado
 │   │   ├── modpackParser.ts      # Leitor de ficheiros ZIP/MRPACK
 │   │   ├── curseforgeService.ts  # Cliente em lote da API CurseForge

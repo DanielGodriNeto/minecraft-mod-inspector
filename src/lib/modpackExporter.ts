@@ -1,5 +1,10 @@
 import JSZip from "jszip";
-import type { ModAnalysisReport, UnifiedModpack } from "@/types";
+import type {
+  ModAnalysisReport,
+  PortCandidate,
+  PortTargetFormat,
+  UnifiedModpack,
+} from "@/types";
 
 interface ExportMod {
   id: string;
@@ -38,6 +43,61 @@ export async function exportUpdatedModpack(
   } catch (error) {
     console.error("Falha ao exportar o modpack atualizado:", error);
     throw new Error("Não foi possível exportar o modpack atualizado.", {
+      cause: error,
+    });
+  }
+}
+
+/**
+ * Exports a modpack ported to a different platform than the one it was
+ * uploaded in, using only mods the user explicitly confirmed a match for
+ * (see PortReviewPanel) — never auto-applies a match.
+ */
+export async function exportPortedModpack(
+  packMeta: {
+    name: string;
+    gameVersion: string;
+    loader: UnifiedModpack["loader"];
+    loaderVersion: string;
+  },
+  targetFormat: PortTargetFormat,
+  confirmedCandidates: PortCandidate[],
+): Promise<void> {
+  try {
+    const mods: ExportMod[] = confirmedCandidates.map((candidate) => ({
+      id: candidate.targetId,
+      version: targetFormat === "curseforge" ? candidate.fileId ?? "0" : candidate.targetId,
+      fileId: candidate.fileId,
+      fileName: candidate.fileName,
+      downloadUrl: candidate.downloadUrl,
+      sha1: candidate.sha1,
+      sha512: candidate.sha512,
+    }));
+
+    const pseudoPack: UnifiedModpack = {
+      format: targetFormat,
+      name: packMeta.name,
+      gameVersion: packMeta.gameVersion,
+      loader: packMeta.loader,
+      loaderVersion: packMeta.loaderVersion,
+      mods: [],
+    };
+
+    const manifest =
+      targetFormat === "modrinth"
+        ? createModrinthManifest(pseudoPack, mods)
+        : createCurseForgeManifest(pseudoPack, mods);
+    const manifestName = targetFormat === "modrinth" ? "modrinth.index.json" : "manifest.json";
+    const filename = targetFormat === "modrinth" ? "modpack-portado.mrpack" : "modpack-portado.zip";
+
+    const archive = new JSZip();
+    archive.file(manifestName, JSON.stringify(manifest, null, 2));
+    const blob = await archive.generateAsync({ type: "blob" });
+
+    triggerDownload(blob, filename);
+  } catch (error) {
+    console.error("Falha ao exportar o modpack portado:", error);
+    throw new Error("Não foi possível exportar o modpack portado.", {
       cause: error,
     });
   }

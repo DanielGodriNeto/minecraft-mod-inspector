@@ -163,6 +163,53 @@ export function resolveModrinthProjectMeta(
   return request;
 }
 
+export interface ModrinthSearchCandidate {
+  projectId: string;
+  slug: string;
+  title: string;
+}
+
+/**
+ * Searches Modrinth's public mod index by name. Used for best-effort
+ * cross-platform matching (e.g. finding a CurseForge mod's Modrinth
+ * counterpart) — there is no official ID crosswalk between the two
+ * platforms, so this is a heuristic, not a guaranteed match.
+ */
+export async function searchModrinthProjects(
+  query: string,
+  loader: string,
+): Promise<ModrinthSearchCandidate[]> {
+  try {
+    const url = new URL("https://api.modrinth.com/v2/search");
+    url.searchParams.set("query", query);
+    url.searchParams.set("limit", "5");
+    url.searchParams.set(
+      "facets",
+      JSON.stringify([["project_type:mod"], [`categories:${loader.toLowerCase()}`]]),
+    );
+
+    const response = await fetch(url, {
+      headers: { "User-Agent": MODRINTH_USER_AGENT },
+    });
+
+    if (!response.ok) {
+      return [];
+    }
+
+    const body = (await response.json()) as {
+      hits?: Array<{ project_id: string; slug: string; title: string }>;
+    };
+
+    return (body.hits ?? []).map((hit) => ({
+      projectId: hit.project_id,
+      slug: hit.slug,
+      title: hit.title,
+    }));
+  } catch {
+    return [];
+  }
+}
+
 async function fetchProjectMeta(
   projectIds: string[],
 ): Promise<Map<string, ModrinthProjectMeta>> {

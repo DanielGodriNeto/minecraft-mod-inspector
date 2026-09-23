@@ -126,3 +126,34 @@ export interface KnownConflictWarning {
   severity: ConflictSeverity;
   reason: string;
 }
+
+/**
+ * Cross-platform "port" feature: converts a modpack from one platform's
+ * format to the other. There is no official ID mapping between Modrinth
+ * and CurseForge, so matches are found by searching the target platform
+ * by mod name and are inherently best-effort — always require human
+ * confirmation before export, never auto-apply a match silently.
+ */
+export type PortTargetFormat = "curseforge" | "modrinth";
+
+export type PortMatchConfidence = "high" | "medium" | "low";
+
+export interface PortCandidate {
+  targetId: string;
+  targetName: string;
+  confidence: PortMatchConfidence;
+  fileId?: string;
+  fileName: string;
+  downloadUrl?: string;
+  sha1?: string;
+  sha512?: string;
+}
+
+export type PortMatchStatus = "matched" | "ambiguous" | "unmatched";
+
+export interface PortMatch {
+  sourceModId: string;
+  sourceModName?: string;
+  status: PortMatchStatus;
+  candidates: PortCandidate[];
+}
