@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import type { InstalledMod } from "@/types";
 import { analyzeModpack } from "@/lib/dependencyResolver";
 import { parseModpackFile } from "@/lib/modpackParser";
+import { resolveCurseForgeMods } from "@/lib/curseforgeService";
 
 export async function POST(request: Request) {
   try {
@@ -18,16 +19,39 @@ export async function POST(request: Request) {
     const packInfo = await parseModpackFile(await fileEntry.arrayBuffer());
     const gameVersion = getFormValue(formData, "gameVersion") ?? packInfo.gameVersion;
     const loader = getFormValue(formData, "loader") ?? packInfo.loader;
+    const curseForgeMods = packInfo.format === "curseforge"
+      ? await resolveCurseForgeMods(packInfo.mods, gameVersion, loader)
+      : undefined;
+    const enrichedPackInfo = {
+      ...packInfo,
+      mods: packInfo.mods.map((mod) => ({
+        ...mod,
+        ...(curseForgeMods
+          ? {
+              name: curseForgeMods.get(mod.id)?.displayName,
+              version: curseForgeMods.get(mod.id)?.installedVersion,
+            }
+          : {}),
+      })),
+    };
     const installedMods: InstalledMod[] = packInfo.mods.map((mod) => ({
       id: mod.id,
-      currentVersion: mod.fileId === undefined ? "unknown" : String(mod.fileId),
+      currentVersion: curseForgeMods?.get(mod.id)?.installedVersion
+        ?? (mod.fileId === undefined ? "unknown" : String(mod.fileId)),
+      name: curseForgeMods?.get(mod.id)?.displayName,
     }));
 
-    const reports = await analyzeModpack(installedMods, gameVersion, loader);
+    const reports = await analyzeModpack(
+      installedMods,
+      gameVersion,
+      loader,
+      packInfo.format,
+      curseForgeMods,
+    );
 
     return NextResponse.json(
       {
-        packInfo,
+        packInfo: enrichedPackInfo,
         reports: Object.fromEntries(reports),
       },
       { status: 200 },

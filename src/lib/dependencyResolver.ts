@@ -4,11 +4,14 @@ import type {
   ModStatusType,
 } from "@/types";
 import { checkModrinthUpdate } from "@/lib/modrinthService";
+import type { CurseForgeResolvedMod } from "@/lib/curseforgeService";
 
 export async function analyzeModpack(
   installedMods: InstalledMod[],
   gameVersion: string,
   loader: string,
+  source: "modrinth" | "curseforge" = "modrinth",
+  curseForgeMods?: Map<string, CurseForgeResolvedMod>,
 ): Promise<Map<string, ModAnalysisReport>> {
   const installedMap = new Map(
     installedMods.map((mod) => [mod.id, mod.currentVersion]),
@@ -18,12 +21,24 @@ export async function analyzeModpack(
   for (const installedMod of installedMods) {
     const report: ModAnalysisReport = {
       modId: installedMod.id,
+      modName: installedMod.name,
+      installedVersion: installedMod.currentVersion,
       status: "UP_TO_DATE",
       latestVersion: installedMod.currentVersion,
       requiredNewMods: [],
       cascadingUpdates: [],
       conflictingMods: [],
     };
+
+    if (source === "curseforge") {
+      const curseForgeMod = curseForgeMods?.get(installedMod.id);
+      if (curseForgeMod?.updateAvailable) {
+        report.latestVersion = curseForgeMod.latestVersion;
+        report.status = "SAFE_UPDATE";
+      }
+      reports.set(installedMod.id, report);
+      continue;
+    }
 
     const update = await checkModrinthUpdate(
       installedMod.id,

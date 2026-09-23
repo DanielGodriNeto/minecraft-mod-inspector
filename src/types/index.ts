@@ -47,6 +47,8 @@ export interface UnifiedModpack {
   mods: Array<{
     id: string;
     fileId?: string | number;
+    name?: string;
+    version?: string;
   }>;
 }
 
@@ -60,10 +62,13 @@ export type ModStatusType =
 export interface InstalledMod {
   id: string;
   currentVersion: string;
+  name?: string;
 }
 
 export interface ModAnalysisReport {
   modId: string;
+  modName?: string;
+  installedVersion?: string;
   status: ModStatusType;
   latestVersion: string;
   requiredNewMods: string[];

@@ -48,7 +48,7 @@ export function Dashboard({
   const rows = packInfo
     ? packInfo.mods.map((mod) => ({
         installedVersion:
-          mod.fileId === undefined ? "Não identificada" : String(mod.fileId),
+          mod.version ?? (mod.fileId === undefined ? "Não identificada" : String(mod.fileId)),
         report: reports[mod.id] ?? createFallbackReport(mod.id),
       }))
     : Object.values(reports).map((report) => ({
@@ -58,7 +58,9 @@ export function Dashboard({
 
   const normalizedSearch = search.trim().toLowerCase();
   const filteredRows = rows.filter(({ report }) => {
-    const matchesSearch = report.modId.toLowerCase().includes(normalizedSearch);
+    const matchesSearch = `${report.modName ?? ""} ${report.modId}`
+      .toLowerCase()
+      .includes(normalizedSearch);
     const matchesStatus = statusFilter === "ALL" || report.status === statusFilter;
     return matchesSearch && matchesStatus;
   });
@@ -170,7 +172,7 @@ export function Dashboard({
           <table className="min-w-full text-left text-sm">
             <thead className="border-b border-slate-200 bg-slate-50 text-xs uppercase tracking-wide text-slate-500">
               <tr>
-                <th className="px-5 py-3 font-semibold">Mod ID</th>
+                <th className="px-5 py-3 font-semibold">Mod</th>
                 <th className="px-5 py-3 font-semibold">Versão instalada</th>
                 <th className="px-5 py-3 font-semibold">Versão mais recente</th>
                 <th className="px-5 py-3 font-semibold">Status</th>
@@ -229,7 +231,10 @@ function ModTableRows({
         className={`transition-colors ${canExpand ? "cursor-pointer hover:bg-slate-50" : ""}`}
         onClick={canExpand ? onToggle : undefined}
       >
-        <td className="whitespace-nowrap px-5 py-4 font-semibold text-slate-900">{report.modId}</td>
+        <td className="whitespace-nowrap px-5 py-4 font-semibold text-slate-900">
+          <span>{report.modName ?? report.modId}</span>
+          {report.modName ? <span className="ml-2 text-xs font-normal text-slate-400">#{report.modId}</span> : null}
+        </td>
         <td className="whitespace-nowrap px-5 py-4 text-slate-600">{installedVersion}</td>
         <td className="whitespace-nowrap px-5 py-4 text-slate-600">{report.latestVersion}</td>
         <td className="px-5 py-4"><StatusBadge status={report.status} /></td>

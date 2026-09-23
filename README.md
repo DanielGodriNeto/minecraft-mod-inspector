@@ -7,7 +7,7 @@ Uma aplicação web de elevado desempenho desenvolvida para analisar *modpacks* 
 ## 🚀 Funcionalidades
 
 - **📥 Ingestão Flexível de Ficheiros:** Suporte *drag-and-drop* para ficheiros de *modpack* (`.zip`, `.mrpack`, `.json`) e registos de erro (`.log`, `.txt`).
-- **🧩 Resolução de Dependências em Largura (BFS):** Motor de análise recursiva que identifica dependências em falta, versões incompatíveis e atualizações necessárias via API do Modrinth.
+- **🧩 Resolução de Dependências em Largura (BFS):** Motor de análise recursiva que identifica dependências em falta, versões incompatíveis e atualizações necessárias via APIs do Modrinth e CurseForge.
 - **⚡ Cache em Memória Otimizada:** Redução drástica de chamadas de rede e prevenção de *rate limiting* na API do Modrinth durante a verificação de múltiplos *mods*.
 - **🛠️ Diagnóstico Automático de Crash Logs:** Analisador baseado em *Regex* para identificar instantaneamente falhas de *Mixin*, dependências ausentes e incompatibilidades de versão do Java.
 - **📊 Painel Interativo (Dashboard):** Visualização clara com *badges* de estado, filtros dinâmicos e rastreamento de dependências.
@@ -23,7 +23,7 @@ Uma aplicação web de elevado desempenho desenvolvida para analisar *modpacks* 
 | **Linguagem** | [TypeScript](https://www.typescriptlang.org/) |
 | **Estilização** | [Tailwind CSS v4](https://tailwindcss.com/) |
 | **Processamento de Ficheiros** | [JSZip](https://stuk.github.io/jszip/) |
-| **Integração de APIs** | [Modrinth API v2](https://docs.modrinth.com/) |
+| **Integração de APIs** | [Modrinth API v2](https://docs.modrinth.com/) e [CurseForge API](https://docs.curseforge.com/) |
 | **Qualidade de Código** | ESLint & TypeScript `tsc` |
 
 ---
@@ -54,12 +54,15 @@ nvm use 20
    npm install
    ```
 
-3. **Iniciar o servidor de desenvolvimento:**
+3. **Configurar a CurseForge (opcional):**
+   Defina `CURSEFORGE_API_KEY` no ambiente do servidor para resolver nomes e versões através da API oficial. Sem a chave, a aplicação continua a funcionar com identificadores formatados como fallback.
+
+4. **Iniciar o servidor de desenvolvimento:**
    ```bash
    npm run dev
    ```
 
-4. **Aceder no navegador:**
+5. **Aceder no navegador:**
    Abra [http://localhost:3000](http://localhost:3000) para utilizar a aplicação.
 
 ---
@@ -81,6 +84,7 @@ minecraft-mod-inspector/
 │   │   ├── dependencyResolver.ts # Algoritmo BFS para dependências
 │   │   ├── modpackExporter.ts    # Gerador do manifesto atualizado
 │   │   ├── modpackParser.ts      # Leitor de ficheiros ZIP/MRPACK
+│   │   ├── curseforgeService.ts  # Cliente em lote da API CurseForge
 │   │   └── modrinthService.ts    # Cliente HTTP com cache da API Modrinth
 │   └── types/              # Definições de tipos TypeScript
 ├── package.json
