@@ -24,8 +24,28 @@ interface UpdateCheckResult {
 const MODRINTH_API_URL = "https://api.modrinth.com/v2/project";
 const MODRINTH_USER_AGENT =
   "MinecraftModInspector/1.0.0 (suporte@modinspector.local)";
+const updateCheckCache = new Map<
+  string,
+  Promise<UpdateCheckResult | null>
+>();
 
 export async function checkModrinthUpdate(
+  projectIdOrSlug: string,
+  gameVersion: string,
+  loader: string,
+): Promise<UpdateCheckResult | null> {
+  const cacheKey = [projectIdOrSlug, gameVersion, loader.toLowerCase()].join("|");
+  const cachedResult = updateCheckCache.get(cacheKey);
+  if (cachedResult) {
+    return cachedResult;
+  }
+
+  const request = fetchModrinthUpdate(projectIdOrSlug, gameVersion, loader);
+  updateCheckCache.set(cacheKey, request);
+  return request;
+}
+
+async function fetchModrinthUpdate(
   projectIdOrSlug: string,
   gameVersion: string,
   loader: string,

@@ -29,9 +29,17 @@ export async function parseModpackFile(
     }
 
     throw new Error(
-      "O arquivo ZIP não contém modrinth.index.json nem manifest.json.",
+      "O arquivo ZIP enviado não contém um manifesto válido do Modrinth ou CurseForge.",
     );
   } catch (zipError) {
+    if (
+      zipError instanceof Error &&
+      zipError.message ===
+        "O arquivo ZIP enviado não contém um manifesto válido do Modrinth ou CurseForge."
+    ) {
+      throw zipError;
+    }
+
     try {
       const json = JSON.parse(decodeBuffer(fileBuffer)) as unknown;
 

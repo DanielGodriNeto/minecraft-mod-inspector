@@ -1,4 +1,4 @@
-import type { CrashAnalysisResult, CrashType } from "@/types";
+import type { CrashAnalysisResult } from "@/types";
 
 const JAVA_CLASS_VERSIONS: Record<string, string> = {
   "52.0": "Java 8",
@@ -40,7 +40,7 @@ function detectJavaVersionMismatch(
   }
 
   const versionMatch = logContent.match(
-    /class file version\s+([\d.]+).*?(?:only recognizes class file versions up to|recognizes class file versions up to)\s+([\d.]+)/is,
+    /class file version\s+([\d.]+)[\s\S]*?(?:only recognizes class file versions up to|recognizes class file versions up to)\s+([\d.]+)/i,
   );
 
   if (!versionMatch) {

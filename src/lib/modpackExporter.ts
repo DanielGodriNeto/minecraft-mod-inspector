@@ -64,7 +64,7 @@ function collectUpdatedMods(
 
     for (const requiredModId of report.requiredNewMods) {
       if (!existingIds.has(requiredModId)) {
-        mods.push({ id: requiredModId, version: "unknown" });
+        mods.push({ id: requiredModId, version: "unknown", fileId: undefined });
         existingIds.add(requiredModId);
       }
     }

@@ -1,10 +1,20 @@
 "use client";
 
 import React, { useCallback, useState } from "react";
+import type {
+  CrashAnalysisResult,
+  ModAnalysisReport,
+  UnifiedModpack,
+} from "@/types";
+
+interface PackAnalysisData {
+  packInfo: UnifiedModpack;
+  reports: Record<string, ModAnalysisReport>;
+}
 
 interface FileUploaderProps {
-  onPackAnalyzed: (data: { packInfo: any; reports: Record<string, any> }) => void;
-  onLogAnalyzed: (data: any) => void;
+  onPackAnalyzed: (data: PackAnalysisData) => void;
+  onLogAnalyzed: (data: CrashAnalysisResult) => void;
   onError: (message: string) => void;
 }
 
@@ -47,20 +57,19 @@ export function FileUploader({
           method: "POST",
           body: formData,
         });
-        const data = (await response.json().catch(() => null)) as
-          | { error?: string }
-          | null;
+        const data: unknown = await response.json().catch(() => null);
 
         if (!response.ok) {
           throw new Error(
-            data?.error ?? `Não foi possível analisar o arquivo (${response.status}).`,
+            getErrorMessage(data) ??
+              `Não foi possível analisar o arquivo (${response.status}).`,
           );
         }
 
         if (isLog) {
-          onLogAnalyzed(data);
+          onLogAnalyzed(data as CrashAnalysisResult);
         } else {
-          onPackAnalyzed(data as { packInfo: any; reports: Record<string, any> });
+          onPackAnalyzed(data as PackAnalysisData);
         }
       } catch (error) {
         onError(
@@ -177,4 +186,17 @@ function UploadIcon() {
       />
     </svg>
   );
+}
+
+function getErrorMessage(value: unknown): string | undefined {
+  if (
+    typeof value === "object" &&
+    value !== null &&
+    "error" in value &&
+    typeof value.error === "string"
+  ) {
+    return value.error;
+  }
+
+  return undefined;
 }
