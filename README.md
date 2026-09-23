@@ -9,9 +9,11 @@ Uma aplicação web de elevado desempenho desenvolvida para analisar *modpacks* 
 - **📥 Ingestão Flexível de Ficheiros:** Suporte *drag-and-drop* para ficheiros de *modpack* (`.zip`, `.mrpack`, `.json`) e registos de erro (`.log`, `.txt`).
 - **🧩 Resolução de Dependências em Largura (BFS):** Motor de análise recursiva que identifica dependências em falta, versões incompatíveis e atualizações necessárias via APIs do Modrinth e CurseForge.
 - **⚡ Cache em Memória Otimizada:** Redução drástica de chamadas de rede e prevenção de *rate limiting* na API do Modrinth durante a verificação de múltiplos *mods*.
-- **🛠️ Diagnóstico Automático de Crash Logs:** Analisador baseado em *Regex* para identificar instantaneamente falhas de *Mixin*, dependências ausentes e incompatibilidades de versão do Java.
+- **🛠️ Diagnóstico Automático de Crash Logs:** Analisador baseado em *Regex* que cobre falhas de *Mixin*, dependências ausentes, IDs de mod duplicados, memória insuficiente (*OutOfMemoryError*), mods incompatíveis entre si e ficheiros `.jar` corrompidos.
+- **⚠️ Deteção de Conflitos Conhecidos:** Lista selecionada de combinações de mods conhecidas por causar problemas (ex.: OptiFine + Sodium/Iris, múltiplos visualizadores de receitas), sinalizadas no painel mesmo quando não há atualização envolvida.
 - **📊 Painel Interativo (Dashboard):** Visualização clara com *badges* de estado, filtros dinâmicos e rastreamento de dependências.
-- **📦 Exportação de Modpacks:** Possibilidade de descarregar o manifesto atualizado com as correções de dependências aplicadas.
+- **📦 Exportação de Modpacks:** Descarrega um `.mrpack`/`manifest.json` atualizado com URLs de download e hashes reais para os mods do Modrinth.
+- **🤖 CLI de Atualização Automática:** Script (`npm run update-mods`) que aponta diretamente para a pasta `mods/` de uma instância real e atualiza os `.jar` identificados no Modrinth, com backup automático dos ficheiros substituídos.
 
 ---
 
@@ -67,6 +69,23 @@ nvm use 20
 
 ---
 
+## 🤖 Atualização Automática via CLI
+
+Para instâncias reais (por exemplo, a pasta `mods/` de um launcher como Prism/MultiMC/CurseForge App), existe um script CLI independente que identifica os mods instalados pelo hash do ficheiro, verifica a versão mais recente compatível no Modrinth e substitui os ficheiros diretamente no disco:
+
+```bash
+npm run update-mods -- --dir /caminho/para/a/instancia/mods --game-version 1.20.1 --loader fabric
+```
+
+- Use `--dry-run` para ver o que seria alterado sem descarregar ou substituir nada.
+- Apenas mods publicados no Modrinth podem ser identificados e atualizados automaticamente; mods exclusivos do CurseForge são listados como "não identificados" para atualização manual.
+- Cada ficheiro descarregado é verificado pelo hash SHA-1 antes de substituir o original.
+- Os ficheiros substituídos são movidos para `mods/.mod-inspector-backups/<timestamp>/` em vez de apagados, para permitir reverter facilmente.
+
+Este script não depende do Next.js nem requer `npm install` para além do Node 20+ (usa apenas módulos nativos do Node).
+
+---
+
 ## 📂 Estrutura do Projeto
 
 ```text
@@ -82,11 +101,15 @@ minecraft-mod-inspector/
 │   ├── lib/                # Módulos de lógica de negócio
 │   │   ├── crashLogParser.ts  # Parser Regex para logs de erro
 │   │   ├── dependencyResolver.ts # Algoritmo BFS para dependências
+│   │   ├── modConflicts.ts       # Lista selecionada de conflitos conhecidos entre mods
 │   │   ├── modpackExporter.ts    # Gerador do manifesto atualizado
 │   │   ├── modpackParser.ts      # Leitor de ficheiros ZIP/MRPACK
 │   │   ├── curseforgeService.ts  # Cliente em lote da API CurseForge
 │   │   └── modrinthService.ts    # Cliente HTTP com cache da API Modrinth
 │   └── types/              # Definições de tipos TypeScript
+├── scripts/
+│   └── cli/
+│       └── mod-updater.mjs # CLI de atualização automática (ver secção acima)
 ├── package.json
 ├── next.config.ts
 └── tsconfig.json

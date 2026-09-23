@@ -3,6 +3,7 @@
 import { useState } from "react";
 import type {
   CrashAnalysisResult,
+  KnownConflictWarning,
   ModAnalysisReport,
   ModStatusType,
   UnifiedModpack,
@@ -11,6 +12,7 @@ import type {
 interface DashboardProps {
   packInfo?: UnifiedModpack;
   reports?: Record<string, ModAnalysisReport>;
+  conflicts?: KnownConflictWarning[];
   crashReport?: CrashAnalysisResult;
   onReset: () => void;
   onExport?: () => void;
@@ -37,6 +39,7 @@ const statusStyles: Record<ModStatusType, string> = {
 export function Dashboard({
   packInfo,
   reports = {},
+  conflicts = [],
   crashReport,
   onReset,
   onExport,
@@ -70,7 +73,7 @@ export function Dashboard({
   const safeUpdates = reportValues.filter(
     (report) => report.status === "SAFE_UPDATE",
   ).length;
-  const conflicts = reportValues.filter(
+  const conflictCount = reportValues.filter(
     (report) => report.status === "CONFLICT",
   ).length;
   const cascadingUpdates = reportValues.filter(
@@ -124,12 +127,14 @@ export function Dashboard({
         <div className="mt-8 grid grid-cols-2 gap-3 lg:grid-cols-4">
           <SummaryCard label="Total de mods" value={totalMods} />
           <SummaryCard label="Podem atualizar" value={safeUpdates} tone="green" />
-          <SummaryCard label="Conflitos" value={conflicts} tone="red" />
+          <SummaryCard label="Conflitos" value={conflictCount} tone="red" />
           <SummaryCard label="Exigem cascata" value={cascadingUpdates} tone="blue" />
         </div>
       </header>
 
       {crashReport ? <CrashReportCard report={crashReport} /> : null}
+
+      {conflicts.length > 0 ? <KnownConflictsCard conflicts={conflicts} /> : null}
 
       <section className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="flex flex-col gap-4 border-b border-slate-200 p-5 sm:flex-row sm:items-center sm:justify-between">
@@ -314,6 +319,52 @@ function CrashReportCard({ report }: { report: CrashAnalysisResult }) {
               <p className="mt-2 text-sm font-medium">{report.recommendation}</p>
             </div>
           </div>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+function KnownConflictsCard({ conflicts }: { conflicts: KnownConflictWarning[] }) {
+  return (
+    <section className="rounded-2xl border border-amber-200 bg-amber-50 p-6 text-amber-950 shadow-sm">
+      <div className="flex gap-4">
+        <span className="mt-0.5 flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/70">
+          <AlertIcon />
+        </span>
+        <div className="min-w-0 flex-1">
+          <h2 className="text-lg font-bold">Possíveis conflitos entre mods</h2>
+          <p className="mt-1 text-sm opacity-80">
+            Combinações de mods conhecidas por causar problemas, com base numa lista selecionada (não exaustiva).
+          </p>
+          <ul className="mt-4 space-y-3">
+            {conflicts.map((conflict) => (
+              <li
+                key={`${conflict.ruleId}-${conflict.modAId}-${conflict.modBId}`}
+                className="rounded-lg bg-white/70 p-4"
+              >
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-semibold">
+                    {conflict.modAName ?? conflict.modAId}
+                  </span>
+                  <span className="text-amber-700">×</span>
+                  <span className="font-semibold">
+                    {conflict.modBName ?? conflict.modBId}
+                  </span>
+                  <span
+                    className={`ml-2 rounded-full px-2.5 py-0.5 text-xs font-semibold uppercase tracking-wide ${
+                      conflict.severity === "critical"
+                        ? "bg-red-100 text-red-800"
+                        : "bg-amber-100 text-amber-800"
+                    }`}
+                  >
+                    {conflict.severity === "critical" ? "Crítico" : "Aviso"}
+                  </span>
+                </div>
+                <p className="mt-2 text-sm">{conflict.reason}</p>
+              </li>
+            ))}
+          </ul>
         </div>
       </div>
     </section>

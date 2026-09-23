@@ -5,6 +5,10 @@ interface ExportMod {
   id: string;
   version: string;
   fileId?: string | number;
+  fileName?: string;
+  downloadUrl?: string;
+  sha1?: string;
+  sha512?: string;
 }
 
 export async function exportUpdatedModpack(
@@ -53,6 +57,10 @@ function collectUpdatedMods(
       id: mod.id,
       version: shouldUpdate ? report.latestVersion : String(mod.fileId ?? "unknown"),
       fileId: mod.fileId,
+      fileName: report?.latestFile?.fileName,
+      downloadUrl: report?.latestFile?.url,
+      sha1: report?.latestFile?.sha1,
+      sha512: report?.latestFile?.sha512,
     };
   });
 
@@ -64,7 +72,15 @@ function collectUpdatedMods(
 
     for (const requiredModId of report.requiredNewMods) {
       if (!existingIds.has(requiredModId)) {
-        mods.push({ id: requiredModId, version: "unknown", fileId: undefined });
+        mods.push({
+          id: requiredModId,
+          version: "unknown",
+          fileId: undefined,
+          fileName: undefined,
+          downloadUrl: undefined,
+          sha1: undefined,
+          sha512: undefined,
+        });
         existingIds.add(requiredModId);
       }
     }
@@ -92,8 +108,16 @@ function createModrinthManifest(
       [loaderKey]: originalPack.loaderVersion,
     },
     files: mods.map((mod) => ({
-      path: `mods/${mod.id}-${mod.version}.jar`,
-      downloads: [],
+      path: `mods/${mod.fileName ?? `${mod.id}-${mod.version}.jar`}`,
+      downloads: mod.downloadUrl ? [mod.downloadUrl] : [],
+      ...(mod.sha1 || mod.sha512
+        ? {
+            hashes: {
+              ...(mod.sha1 ? { sha1: mod.sha1 } : {}),
+              ...(mod.sha512 ? { sha512: mod.sha512 } : {}),
+            },
+          }
+        : {}),
     })),
   };
 }

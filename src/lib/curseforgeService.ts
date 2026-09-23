@@ -8,6 +8,7 @@ interface CurseForgeFile {
   fileDate?: string;
   gameVersions?: string[];
   modLoader?: number;
+  downloadUrl?: string | null;
 }
 
 interface CurseForgeFileIndex {
@@ -39,6 +40,8 @@ export interface CurseForgeResolvedMod {
   installedVersion: string;
   latestVersion: string;
   latestFileId: string;
+  latestFileName?: string;
+  latestDownloadUrl?: string;
   updateAvailable: boolean;
 }
 
@@ -209,6 +212,8 @@ function formatResolvedMod(
     installedVersion,
     latestVersion,
     latestFileId,
+    latestFileName: latestFile?.fileName ?? latestFile?.displayName,
+    latestDownloadUrl: latestFile?.downloadUrl ?? undefined,
     updateAvailable: latestFileId !== installedFileId,
   };
 }

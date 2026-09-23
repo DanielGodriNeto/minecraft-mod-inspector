@@ -28,6 +28,11 @@ export interface ModrinthIndex {
   files: Array<{
     path: string;
     downloads: string[];
+    fileSize?: number;
+    hashes?: {
+      sha1?: string;
+      sha512?: string;
+    };
   }>;
 }
 
@@ -65,6 +70,13 @@ export interface InstalledMod {
   name?: string;
 }
 
+export interface LatestFileInfo {
+  url: string;
+  fileName: string;
+  sha1?: string;
+  sha512?: string;
+}
+
 export interface ModAnalysisReport {
   modId: string;
   modName?: string;
@@ -74,12 +86,17 @@ export interface ModAnalysisReport {
   requiredNewMods: string[];
   cascadingUpdates: string[];
   conflictingMods: string[];
+  latestFile?: LatestFileInfo;
 }
 
 export type CrashType =
   | "JAVA_VERSION_MISMATCH"
   | "MISSING_DEPENDENCY"
   | "MIXIN_CONFLICT"
+  | "OUT_OF_MEMORY"
+  | "DUPLICATE_MOD_ID"
+  | "INCOMPATIBLE_MODS"
+  | "CORRUPTED_MOD_FILE"
   | "UNKNOWN";
 
 export interface CrashAnalysisResult {
@@ -88,4 +105,24 @@ export interface CrashAnalysisResult {
   suspectedMod?: string;
   details: string;
   recommendation: string;
+}
+
+export type ConflictSeverity = "warning" | "critical";
+
+export interface KnownModConflictRule {
+  id: string;
+  modA: string[];
+  modB: string[];
+  severity: ConflictSeverity;
+  reason: string;
+}
+
+export interface KnownConflictWarning {
+  ruleId: string;
+  modAId: string;
+  modAName?: string;
+  modBId: string;
+  modBName?: string;
+  severity: ConflictSeverity;
+  reason: string;
 }
